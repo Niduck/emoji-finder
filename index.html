@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Emoji finder</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/spectre.css/dist/spectre.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/spectre.css/dist/spectre-exp.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/spectre.css/dist/spectre-icons.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&family=Roboto:wght@500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Noto Color Emoji", sans-serif;
+      }
+      .emoji-list {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-evenly;
+        flex-wrap: wrap;
+        width: 100%;
+        margin: 1rem 0;
+        font-size: 0.55rem;
+      }
+      .emoji-block {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+        margin: 8px;
+        cursor: pointer;
+        border-radius: 8px;
+        background-color: white;
+        border: 2px solid #f1f1fc;
+        width: 128px;
+        text-align: center;
+        gap: 16px;
+      }
+      .emoji {
+        font-size: 48px;
+      }
+      input {
+        width: 100%;
+        padding: 8px;
+        border: 2px solid #f1f1fc;
+        border-radius: 8px;
+      }
+      input::placeholder {
+        color: #5755d9;
+        opacity: 0.3;
+      }
+    </style>
+  </head>
+  <body>
+    <main defer-x-data="emojis">
+      <div
+        class="container p-centered"
+        style="width: 800px; text-align: center"
+      >
+        <div class="columns">
+          <div class="column col-12">
+            <div class="py-2">
+              <div class="h1">Emoji picker</div>
+            </div>
+          </div>
+        </div>
+        <div class="columns">
+          <div class="column col-12 py-2">
+            <div class="label label-secondary p-2">
+              <small>Click on the emoji to copy it to the clipboard</small>
+            </div>
+          </div>
+          <div class="column col-12">
+            <input
+              type="text"
+              placeholder="Type the emoji name or category..."
+              @input="filter"
+            />
+          </div>
+          <div class="column col-12">
+            <div class="emoji-list">
+              <template x-for="emoji in emojis">
+                <div class="emoji-block" @click="copy">
+                  <div x-text="emoji.char" class="emoji"></div>
+                  <div
+                    class="label label-secondary p-2"
+                    x-text="emoji.name"
+                  ></div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+        <small>Made with ❤️ by a 🦆</small>
+      </div>
+    </main>
+
+    <script type="text/javascript">
+      let data = [];
+      fetch("https://unpkg.com/emoji.json@14.0.0/emoji.json").then(
+        async (res) => {
+          data = await res.json();
+          console.log("emojis-fetch-done");
+          let reactiveData = Alpine.reactive(data);
+          Alpine.data("emojis", () => ({
+            emojis: reactiveData,
+            filter(e) {
+              let inputData = e.target.value;
+              this.emojis = data.filter(
+                (item) =>
+                  item.name.includes(inputData) ||
+                  item.category.includes(inputData)
+              );
+            },
+            copy(e) {
+              navigator.clipboard.writeText(e.target.innerText);
+            },
+          }));
+
+          // Alpine.start();
+          const components = document.querySelectorAll("[defer-x-data]");
+          components.forEach((component) => {
+            // Stop Alpine from detecting changes to the DOM while we set the x-data attributes.
+            // Note:
+            // Not strictly necessary, but for some reason Alpine doesn't automatically detect
+            // these attribute changes and I have to manually initialize the component. In case
+            // this changes in the future and Alpine does detect these attribute changes, I want
+            // to make sure Alpine definitely does not initialize the components automatically.
+            Alpine.mutateDom(() => {
+              component.setAttribute(
+                "x-data",
+                component.getAttribute("defer-x-data")
+              );
+            });
+            // Initialize the component manually
+            Alpine.initTree(component);
+          });
+        }
+      );
+      document.addEventListener("emojis-fetch-done", () => {});
+      // document.addEventListener("alpine:init", () => {});
+      //from https://unpkg.com/emoji.json@14.0.0/emoji.json
+    </script>
+    <script src="https://unpkg.com/alpinejs" defer></script>
+  </body>
+</html>
